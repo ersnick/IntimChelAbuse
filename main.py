@@ -73,28 +73,7 @@ def login_and_execute_js_mobile(username, password, num_profile):
         time.sleep(5)  # Даем время на загрузку страницы после входа
 
         # Выполняем JavaScript код после авторизации
-        if num_profile > 20:
-            for i in range(1, 40, 2):
-                execute_js(driver, str(i))
-                i += 2
-
-            driver.get('https://miss.intim-chel.net/users/item/index?page=2')
-            time.sleep(5)
-
-            for i in range(1, (num_profile - 20)*2, 2):
-                execute_js(driver, str(i))
-                i += 2
-                driver.get('https://miss.intim-chel.net/users/item/index?page=2')
-                time.sleep(5)
-
-            driver.get('https://miss.intim-chel.net/users/item/index')
-
-        else:
-            for i in range(1, num_profile*2, 2):
-                execute_js(driver, str(i))
-                i += 2
-
-        start_countdown(driver, num_profile)
+        run_task(driver, num_profile)
 
     except Exception as e:
         print(f"Произошла ошибка: {e}")
@@ -134,14 +113,32 @@ def start_countdown(driver, num_profile):
     countdown_root.title("Таймер")
     countdown_label = tk.Label(countdown_root, text="", font=('Helvetica', 18))
     countdown_label.pack(pady=20)
-    countdown(60, countdown_root, countdown_label, driver, num_profile)
+    countdown(1800, countdown_root, countdown_label, driver, num_profile)
     countdown_root.mainloop()
 
 
 def run_task(driver, num_profile):
-    for i in range(1, num_profile*2, 2):
-        execute_js(driver, str(i))
-        i += 2
+    if num_profile > 20:
+        for i in range(1, 40, 2):
+            execute_js(driver, str(i))
+            i += 2
+
+        driver.get('https://miss.intim-chel.net/users/item/index?page=2')
+        time.sleep(5)
+
+        for i in range(1, (num_profile - 20) * 2, 2):
+            execute_js(driver, str(i))
+            i += 2
+            driver.get('https://miss.intim-chel.net/users/item/index?page=2')
+            time.sleep(5)
+
+        driver.get('https://miss.intim-chel.net/users/item/index')
+
+    else:
+        for i in range(1, num_profile * 2, 2):
+            execute_js(driver, str(i))
+            i += 2
+
     print("JavaScript код выполнен. Ждем 30 минут перед следующим выполнением.")
     start_countdown(driver, num_profile)
 
