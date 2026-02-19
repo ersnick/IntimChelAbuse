@@ -3,6 +3,7 @@ import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 import tkinter as tk
 from threading import Timer
@@ -44,12 +45,15 @@ def login_and_execute_js_mobile(username, password, num_profile):
         "deviceName": "iPhone XR"
     }
 
+    chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"  # Укажите путь к Chrome
     chrome_options = Options()
+    chrome_options.binary_location = chrome_path  # Передача пути к Chrome
+
     chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
 
-    # Устанавливаем путь к драйверу Chrome
-    chromedriver_path = os.path.join(os.path.dirname(__file__), 'chromedriver.exe')
-    driver = webdriver.Chrome(service=Service(chromedriver_path), options=chrome_options)  # Путь к chromedriver
+    # Автоматическое скачивание подходящей версии ChromeDriver
+    driver = webdriver.Chrome(options=chrome_options)
+
     try:
         # Открываем Google
         driver.get('https://www.google.com/search?q=%D0%B8%D0%BD%D1%82%D0%B8%D0%BC+%D0%A7%D0%B5%D0%BB%D1%8F%D0%B1%D0%B8%D0%BD%D1%81%D0%BA&oq=%D0%B8%D0%BD&gs_lcrp=EgZjaHJvbWUqBggBEEUYOzIGCAAQRRg5MgYIARBFGDsyBggCEEUYOzIGCAMQRRg7MgYIBBBFGD0yBggFEEUYPTIGCAYQRRg90gEIMTg3MGowajeoAgiwAgE&sourceid=chrome&ie=UTF-8')
