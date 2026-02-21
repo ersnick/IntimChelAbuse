@@ -1,150 +1,140 @@
-import os
-
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 import time
 import tkinter as tk
 from threading import Timer
-from selenium.webdriver.common.by import By
 
+from playwright.sync_api import sync_playwright
 
-def execute_js(driver, num_profile):
-    js_code = """
-    // Находим все элементы .block.item на странице
+def execute_js(page, num_profile):
+    js_code = f"""
     const selectElements = document.querySelectorAll('.item-price');
     let counter = 0;
-    // Перебираем каждый найденный элемент .block.item
-    selectElements.forEach(selectElement => {
+
+    selectElements.forEach(selectElement => {{
         counter = counter + 1;
-        if (counter == %s){
-            if (selectElement) {
-                // Устанавливаем значение "1"
+        if (counter == {num_profile}) {{
+            if (selectElement) {{
                 selectElement.value = '1';
 
-                // Триггерим событие изменения (change), если требуется
-                const event = new Event('change', { bubbles: true });
+                const event = new Event('change', {{ bubbles: true }});
                 selectElement.dispatchEvent(event);
-                // Добавляем задержку в 1 секунду (1000 миллисекунд)
-                setTimeout(function() {
+
+                setTimeout(function() {{
                     selectElement.dispatchEvent(event);
-                }, 10000); // задержка в миллисекундах (в данном случае 10000 мс = 10 секунд)
-            } else {
-                console.error('Не удалось найти элемент .item-price внутри .block.item');
-            }
-        }
-    });
-    """ % num_profile
-
-    driver.execute_script(js_code)
-
-
-def login_and_execute_js_mobile(username, password, num_profile):
-    mobile_emulation = {
-        "deviceName": "iPhone XR"
-    }
-
-    chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"  # Укажите путь к Chrome
-    chrome_options = Options()
-    chrome_options.binary_location = chrome_path  # Передача пути к Chrome
-
-    chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
-
-    # Автоматическое скачивание подходящей версии ChromeDriver
-    driver = webdriver.Chrome(options=chrome_options)
-
-    try:
-        # Открываем Google
-        driver.get('https://www.google.com/search?q=%D0%B8%D0%BD%D1%82%D0%B8%D0%BC+%D0%A7%D0%B5%D0%BB%D1%8F%D0%B1%D0%B8%D0%BD%D1%81%D0%BA&oq=%D0%B8%D0%BD&gs_lcrp=EgZjaHJvbWUqBggBEEUYOzIGCAAQRRg5MgYIARBFGDsyBggCEEUYOzIGCAMQRRg7MgYIBBBFGD0yBggFEEUYPTIGCAYQRRg90gEIMTg3MGowajeoAgiwAgE&sourceid=chrome&ie=UTF-8')
-
-        # Ожидание нажатия кнопки "Продолжить"
-        wait_for_continue()
-
-        # Открываем страницу для авторизации
-        driver.get('https://miss.intim-chel.net/users/site/login')  # замените на URL страницы авторизации
-
-        # Находим поля ввода для логина и пароля и вводим данные
-        username_field = driver.find_element(By.ID, 'loginform-email')  # замените на ID поля логина
-        username_field.send_keys(username)
-
-        password_field = driver.find_element(By.ID, 'loginform-password')  # замените на ID поля пароля
-        password_field.send_keys(password)
-
-        # Отправляем форму
-        password_field.submit()
-
-        time.sleep(5)  # Даем время на загрузку страницы после входа
-
-        # Выполняем JavaScript код после авторизации
-        run_task(driver, num_profile)
-
-    except Exception as e:
-        print(f"Произошла ошибка: {e}")
-    finally:
-        driver.quit()
+                }}, 10000);
+            }}
+        }}
+    }});
+    """
+    page.evaluate(js_code)
 
 
 def wait_for_continue():
     root = tk.Tk()
     root.title("Ожидание продолжения")
-    root.geometry("300x200")  # Установить размер окна
+    root.geometry("300x200")
 
     def on_continue():
         root.quit()
         root.destroy()
 
-    continue_button = tk.Button(root, text="Открыта страница входа", command=on_continue)
-    continue_button.pack(pady=20)
+    btn = tk.Button(root, text="Открыта страница входа", command=on_continue)
+    btn.pack(pady=40)
 
     root.mainloop()
 
 
-def countdown(t, root, label, driver, num_profile):
+def countdown(t, root, label, page, num_profile):
     if t > 0:
         mins, secs = divmod(t, 60)
-        time_format = '{:02d}:{:02d}'.format(mins, secs)
-        label.config(text="Следующий запуск через: " + time_format)
-        root.after(1000, countdown, t-1, root, label, driver, num_profile)
+        label.config(text=f"Следующий запуск через: {mins:02d}:{secs:02d}")
+        root.after(1000, countdown, t - 1, root, label, page, num_profile)
     else:
         root.quit()
         root.destroy()
-        run_task(driver, num_profile)
+        run_task(page, num_profile)
 
 
-def start_countdown(driver, num_profile):
+def start_countdown(page, num_profile):
     countdown_root = tk.Tk()
     countdown_root.title("Таймер")
-    countdown_label = tk.Label(countdown_root, text="", font=('Helvetica', 18))
-    countdown_label.pack(pady=20)
-    countdown(1800, countdown_root, countdown_label, driver, num_profile)
+
+    label = tk.Label(countdown_root, text="", font=('Helvetica', 18))
+    label.pack(pady=20)
+
+    countdown(1620, countdown_root, label, page, num_profile)
     countdown_root.mainloop()
 
 
-def run_task(driver, num_profile):
+def run_task(page, num_profile):
     if num_profile > 20:
+        # Первая страница
+        page.goto("https://dosug.intim-chel.org/users/item/index", wait_until="load")
+        page.wait_for_selector(".item-price")
+        time.sleep(10)
         for i in range(1, 40, 2):
-            execute_js(driver, str(i))
-            i += 2
+            execute_js(page, i)
+            page.wait_for_selector(".item-price")
+            time.sleep(10)
 
-        driver.get('https://miss.intim-chel.net/users/item/index?page=2')
-        time.sleep(5)
-
+        # Вторая страница
         for i in range(1, (num_profile - 20) * 2, 2):
-            execute_js(driver, str(i))
-            i += 2
-            driver.get('https://miss.intim-chel.net/users/item/index?page=2')
-            time.sleep(5)
+            page.goto("https://dosug.intim-chel.org/users/item/index?page=2", wait_until="load")
+            page.wait_for_selector(".item-price")
+            time.sleep(10)
+            execute_js(page, i)
+            page.wait_for_selector(".item-price")
+            time.sleep(10)
 
-        driver.get('https://miss.intim-chel.net/users/item/index')
+        # Возврат на первую страницу
+        page.goto("https://dosug.intim-chel.org/users/item/index", wait_until="load")
+        page.wait_for_selector(".item-price")
 
     else:
+        page.goto("https://dosug.intim-chel.org/users/item/index", wait_until="load")
+        page.wait_for_selector(".item-price")
         for i in range(1, num_profile * 2, 2):
-            execute_js(driver, str(i))
-            i += 2
+            execute_js(page, i)
+            page.wait_for_selector(".item-price")
 
-    print("JavaScript код выполнен. Ждем 30 минут перед следующим выполнением.")
-    start_countdown(driver, num_profile)
+    print("JavaScript код выполнен. Ждем 27 минут перед следующим выполнением.")
+    start_countdown(page, num_profile)
+
+
+def login_and_execute_js_mobile(username, password, num_profile):
+    with sync_playwright() as p:
+        iphone = p.devices["iPhone XR"]
+        import sys, os
+
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(__file__)
+
+        chromium_path = os.path.join(base_path, "ms-playwright", "chromium-1208", "chrome-win64", "chrome.exe")
+
+        browser = p.chromium.launch(executable_path=chromium_path, headless=False)
+        context = browser.new_context(**iphone)
+        page = context.new_page()
+
+        try:
+            page.goto("https://www.google.com/search?q=intim-chel.org")
+
+            wait_for_continue()
+
+            page.locator("#loginform-email").fill(username)
+            page.locator("#loginform-password").fill(password)
+            page.locator("#loginform-password").press("Enter")
+
+            time.sleep(5)
+
+            run_task(page, num_profile)
+
+        except Exception as e:
+            print(f"Произошла ошибка: {e}")
+
+        finally:
+            context.close()
+            browser.close()
 
 
 def main():
@@ -152,32 +142,33 @@ def main():
         username = username_entry.get()
         password = password_entry.get()
         num_profile = int(num_profiles_entry.get())
+
         root.quit()
         root.destroy()
 
-        def task():
-            login_and_execute_js_mobile(username, password, num_profile)
-
-        Timer(0, task).start()
+        Timer(
+            0,
+            login_and_execute_js_mobile,
+            args=(username, password, num_profile)
+        ).start()
 
     root = tk.Tk()
     root.title("Ввод данных")
-    root.geometry("300x250")  # Установить размер окна
+    root.geometry("300x250")
 
     tk.Label(root, text="Логин").pack(pady=5)
     username_entry = tk.Entry(root)
     username_entry.pack(pady=5)
 
     tk.Label(root, text="Пароль").pack(pady=5)
-    password_entry = tk.Entry(root, show='*')
+    password_entry = tk.Entry(root, show="*")
     password_entry.pack(pady=5)
 
     tk.Label(root, text="Количество анкет").pack(pady=5)
     num_profiles_entry = tk.Entry(root)
     num_profiles_entry.pack(pady=5)
 
-    submit_button = tk.Button(root, text="Продолжить", command=on_submit)
-    submit_button.pack(pady=20)
+    tk.Button(root, text="Продолжить", command=on_submit).pack(pady=20)
 
     root.mainloop()
 
